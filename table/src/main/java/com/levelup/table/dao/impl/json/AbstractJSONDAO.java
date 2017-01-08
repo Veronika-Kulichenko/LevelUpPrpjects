@@ -2,6 +2,7 @@ package com.levelup.table.dao.impl.json;
 
 import com.levelup.table.dao.DAO;
 import com.levelup.table.dao.dataproviders.FileDataProvider;
+import com.levelup.table.dao.impl.AbstractFileDAO;
 import com.levelup.table.entity.Entity;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -12,26 +13,24 @@ import java.util.logging.Logger;
 /**
  * @author Veronika Kulichenko on 02.01.17.
  */
-public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
+public abstract class AbstractJSONDAO<T extends Entity> extends AbstractFileDAO<T> {
 
-  private final FileDataProvider fileDataProvider;
-  private static final Logger LOG = Logger.getLogger(StreetJsonDAOImpl.class.getName());
-  private static long id = 1;
+  private static final Logger LOG = Logger.getLogger(AbstractJSONDAO.class.getName());
 
   private final String HEADER_JSON;
   private static final String TAIL_JSON = "\n]}";
 
-  protected AbstractJSONDAO(final FileDataProvider fileDataProvider, final String entityName) {
-    this.fileDataProvider = fileDataProvider;
+  protected AbstractJSONDAO(final FileDataProvider fileDataProvider, String fileName, final String entityName) {
+    super(fileDataProvider, fileName);
     this.HEADER_JSON = "{\"" + entityName + "\":[";
   }
 
   @Override
   public void create(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       if ((t.getId() == null) || (t.getId() == 0L)) {
-        t.setId(id++);
+        t.setId(getNextId());
       }
       if (file.length() < (HEADER_JSON.length() + TAIL_JSON.length())) {
         file.write((HEADER_JSON + "\n").getBytes());
@@ -50,7 +49,7 @@ public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
   @Override
   public ArrayList<T> read() {
     ArrayList<T> result = new ArrayList();
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       file.seek(0);
       String str;
@@ -70,7 +69,7 @@ public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
 
   @Override
   public void update(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -95,7 +94,7 @@ public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
 
   @Override
   public void delete(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -118,7 +117,7 @@ public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
   @Override
   public T getOneById(final long id) {
     T t = null;
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     String str;
     try {
       while ((str = file.readLine()) != null) {
@@ -152,5 +151,24 @@ public abstract class AbstractJSONDAO<T extends Entity> implements DAO<T> {
         arr[1] = end;
       }
     } return arr;
+  }
+
+  @Override
+  protected long initMaxId() {
+    long maxId = 0;
+    RandomAccessFile file = getDataFile();
+    try {
+      file.seek(0);
+      String str = "";
+      while ((str = file.readLine()) != null) {
+        if (str.contains("id")) {
+          long id = Long.parseLong(str.replaceAll("\\{id:|\\w+:|\\}|\\s+", "").split(",")[0]);
+          if (maxId < id) maxId = id;
+        }
+      }
+    } catch (IOException e) {
+      LOG.log(Level.INFO, "error during initialization id", e);
+    }
+    return maxId;
   }
 }

@@ -9,7 +9,7 @@ import com.levelup.table.entity.Citizen;
 public class CitizenCSVDAOImpl extends AbstractCSVNDAO<Citizen> {
 
   public CitizenCSVDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "id;firstName;lastName;age;streetId");
+    super(fileDataProvider, "citizen.csv", "id;firstName;lastName;age;streetId");
   }
 
   @Override

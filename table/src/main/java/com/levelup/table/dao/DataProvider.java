@@ -1,12 +1,12 @@
 package com.levelup.table.dao;
 
 /**
- * Created by java on 30.07.2016.
+ * @author Veronika Kulichenko on 30.07.2016.
  */
 public interface DataProvider {
 
     enum ConnectionType {
-        MYSQL, H2, MONGODB;
+        MYSQL, H2, MONGODB, CSV, JSON, XML
     }
 
     void openConnection();

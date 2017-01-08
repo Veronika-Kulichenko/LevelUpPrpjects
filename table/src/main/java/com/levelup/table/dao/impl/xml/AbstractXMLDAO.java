@@ -1,7 +1,7 @@
 package com.levelup.table.dao.impl.xml;
 
-import com.levelup.table.dao.DAO;
 import com.levelup.table.dao.dataproviders.FileDataProvider;
+import com.levelup.table.dao.impl.AbstractFileDAO;
 import com.levelup.table.dao.impl.json.StreetJsonDAOImpl;
 import com.levelup.table.entity.Entity;
 import java.io.IOException;
@@ -13,11 +13,9 @@ import java.util.logging.Logger;
 /**
  * @author Veronika Kulichenko on 03.01.17.
  */
-public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
+public abstract class AbstractXMLDAO<T extends Entity> extends AbstractFileDAO<T> {
 
-  protected final FileDataProvider fileDataProvider;
   private static final Logger LOG = Logger.getLogger(StreetJsonDAOImpl.class.getName());
-  private static long id = 1;
 
   private final String HEADER_XML;
   private final String TAIL_XML;
@@ -26,12 +24,12 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
 
   private static final String ID_TAG = "<id>%d</id>";
 
-  public AbstractXMLDAO(final FileDataProvider fileDataProvider, final String entityListName, final String entityName) {
-    this.fileDataProvider = fileDataProvider;
+  public AbstractXMLDAO(final FileDataProvider fileDataProvider, String fileName, final String entityListName, final String entityName) {
+    super(fileDataProvider, fileName);
     this.HEADER_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<" + entityListName + ">";
     this.TAIL_XML = "</" + entityListName + ">";
-    this.OPEN_TAG = "<" + entityName + ">";
-    this.CLOSE_TAG = "</" + entityName + ">";
+    this.OPEN_TAG = "\t<" + entityName + ">\n";
+    this.CLOSE_TAG = "\t</" + entityName + ">\n";
   }
 
   public abstract String viewEntity(T t);
@@ -40,10 +38,11 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
 
   @Override
   public void create(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
+      file.seek(0);
       if ((t.getId() == null) || (t.getId() == 0L)) {
-        t.setId(id++);
+        t.setId(getNextId());
       }
       if (file.length() < (HEADER_XML.length() + TAIL_XML.length())) {
         file.write((HEADER_XML + "\n").getBytes());
@@ -53,34 +52,35 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       file.write(viewEntity(t).getBytes());
       file.write(("\n" + TAIL_XML).getBytes());
 
-    } catch (IOException ex) {
-      LOG.log(Level.INFO, "create entity error", ex);
+    } catch (IOException e) {
+      LOG.log(Level.INFO, "create entity error", e);
     }
   }
 
   @Override
   public ArrayList<T> read() {
-    RandomAccessFile file = fileDataProvider.getDataFile();
-    ArrayList<T> streetList = new ArrayList<>();
-    String str = "";
-    String myStr = "";
+    RandomAccessFile file = getDataFile();
+    ArrayList<T> list = new ArrayList<>();
     try {
+      file.seek(0);
+      String str = "";
+      String myStr = "";
       while ((str = file.readLine()) != null) {
-        if (HEADER_XML.contains(str) || str.contains(OPEN_TAG)) continue;
-        if (str.contains(CLOSE_TAG)) {
-          streetList.add(parseEntity(myStr));
+        if (HEADER_XML.contains(str) || OPEN_TAG.contains(str.trim())) continue;
+        if (CLOSE_TAG.contains(str.trim())) {
+          list.add(parseEntity(myStr));
           myStr = "";
         } else myStr += str.trim() + "|";
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.INFO, "read entity error", e);
     }
-    return streetList;
+    return list;
   }
 
   @Override
   public void update(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -99,13 +99,13 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       file.write(buffer.getBytes());
       file.setLength(start + s.length() + buffer.length() - 1);
     } catch (IOException e) {
-      System.out.println("Error get info from file JSON (Street)");
+      LOG.log(Level.INFO, "update entity error", e);
     }
   }
 
   @Override
   public void delete(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -121,13 +121,13 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       file.write(buffer.getBytes());
       file.setLength(start + buffer.length() - 1);
     } catch (IOException e) {
-      System.out.println("Error get info from file JSON (Street)");
+      LOG.log(Level.INFO, "delete entity error", e);
     }
   }
 
   @Override
   public T getOneById(final long id) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     String entityId = String.format(ID_TAG, id);
     String str;
     String myStr = "";
@@ -135,7 +135,7 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
     boolean found = false;
     try {
       while ((str = file.readLine()) != null) {
-        if (found && str.contains(CLOSE_TAG)) break;
+        if (found && CLOSE_TAG.contains(str.trim())) break;
         if (str.contains(entityId)) {
           found = true;
           myStr = str;
@@ -147,19 +147,38 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       }
       t = parseEntity(myStr);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.log(Level.INFO, "get entity by id error", e);
     }
     return t;
+  }
+
+  @Override
+  protected long initMaxId() {
+    long maxId = 0;
+    RandomAccessFile file = getDataFile();
+    try {
+      file.seek(0);
+      String str = "";
+      while ((str = file.readLine()) != null) {
+        if (str.contains("<id>")) {
+          long id = Long.parseLong(str.replaceAll("\\</?id\\>", "").trim());
+          if (maxId < id) maxId = id;
+        }
+      }
+    } catch (IOException e) {
+      LOG.log(Level.INFO, "error during initialization id", e);
+    }
+    return maxId;
   }
 
   public int[] getStartAndEndOfStr(final RandomAccessFile file, final T t) throws IOException {
     int[] arr = new int[2];
     int start = 0;
     int end = 0;
-    String entityId = String.format(ID_TAG, id);
+    String entityId = String.format(ID_TAG, t.getId());
     boolean found = false;
     String str = "";
-    while ((str = file.readLine()) != null && !found) {
+    while ((str = file.readLine()) != null) {
       if (str.contains(entityId)) {
         found = true;
         start -= OPEN_TAG.length();
@@ -167,7 +186,7 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       }
       if (!found) {
         start += str.length() + 1;
-      } else if (!str.contains(CLOSE_TAG)) {
+      } else if (!CLOSE_TAG.contains(str.trim())) {
         if (end == 0) {
           end = start + OPEN_TAG.length() + str.length() + 1;
         } else {
@@ -180,6 +199,8 @@ public abstract class AbstractXMLDAO<T extends Entity> implements DAO<T> {
       }
     }
     return arr;
+
+
   }
 
 }

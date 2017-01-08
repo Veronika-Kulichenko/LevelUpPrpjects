@@ -8,7 +8,7 @@ import com.levelup.table.entity.Citizen;
  */
 public class CitizenJsonDAOImpl extends AbstractJSONDAO<Citizen> {
   public CitizenJsonDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "citizenList");
+    super(fileDataProvider, "citizen.json", "citizenList");
   }
 
   @Override

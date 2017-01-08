@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public class StreetXMLDAOImpl extends AbstractXMLDAO<Street> {
 
   public StreetXMLDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "street_list", "street");
+    super(fileDataProvider, "street.xml", "street_list", "street");
   }
 
   @Override

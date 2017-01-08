@@ -9,7 +9,7 @@ import com.levelup.table.entity.Street;
 public class StreetJsonDAOImpl extends AbstractJSONDAO<Street> {
 
   public StreetJsonDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "streetList");
+    super(fileDataProvider, "street.json", "streetList");
   }
 
   @Override

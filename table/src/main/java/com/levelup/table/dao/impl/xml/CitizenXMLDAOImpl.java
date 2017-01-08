@@ -9,7 +9,7 @@ import com.levelup.table.entity.Citizen;
 public class CitizenXMLDAOImpl extends AbstractXMLDAO<Citizen> {
 
   public CitizenXMLDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "citizen_list", "citizen");
+    super(fileDataProvider, "citizen.xml", "citizen_list", "citizen");
   }
 
   @Override

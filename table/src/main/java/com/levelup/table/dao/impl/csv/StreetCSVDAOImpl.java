@@ -8,7 +8,7 @@ import com.levelup.table.entity.Street;
  */
 public class StreetCSVDAOImpl extends AbstractCSVNDAO<Street> {
   public StreetCSVDAOImpl(final FileDataProvider fileDataProvider) {
-    super(fileDataProvider, "id;streetName");
+    super(fileDataProvider, "street.csv", "id;streetName");
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.levelup.table.dao.impl.csv;
 
 import com.levelup.table.dao.DAO;
 import com.levelup.table.dao.dataproviders.FileDataProvider;
+import com.levelup.table.dao.impl.AbstractFileDAO;
 import com.levelup.table.dao.impl.json.StreetJsonDAOImpl;
 import com.levelup.table.entity.Entity;
 import java.io.IOException;
@@ -15,24 +16,22 @@ import java.util.regex.Pattern;
 /**
  * @author Veronika Kulichenko on 02.01.17.
  */
-public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
-  private final FileDataProvider fileDataProvider;
+public abstract class AbstractCSVNDAO<T extends Entity> extends AbstractFileDAO<T> {
   private static final Logger LOG = Logger.getLogger(StreetJsonDAOImpl.class.getName());
-  private static long id = 1;
 
   private final String HEADER_CSV;
 
-  protected AbstractCSVNDAO(final FileDataProvider fileDataProvider, final String HEADER_CSV) {
-    this.fileDataProvider = fileDataProvider;
+  protected AbstractCSVNDAO(final FileDataProvider fileDataProvider, String fileName, final String HEADER_CSV) {
+    super(fileDataProvider, fileName);
     this.HEADER_CSV = HEADER_CSV;
   }
 
   @Override
   public void create(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       if ((t.getId() == null) || (t.getId() == 0L)) {
-        t.setId(id++);
+        t.setId(getNextId());
       }
       if (file.length() < (HEADER_CSV.length())) {
         file.write((HEADER_CSV + "\n").getBytes());
@@ -49,7 +48,7 @@ public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
   @Override
   public ArrayList<T> read() {
     ArrayList<T> result = new ArrayList();
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       file.seek(0);
       String str;
@@ -70,7 +69,7 @@ public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
 
   @Override
   public void update(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -95,7 +94,7 @@ public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
 
   @Override
   public void delete(final T t) {
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     try {
       String buffer = "";
       file.seek(0);
@@ -118,7 +117,7 @@ public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
   @Override
   public T getOneById(final long id) {
     T t = null;
-    RandomAccessFile file = fileDataProvider.getDataFile();
+    RandomAccessFile file = getDataFile();
     String str;
     try {
       while ((str = file.readLine()) != null) {
@@ -133,6 +132,25 @@ public abstract class AbstractCSVNDAO<T extends Entity> implements DAO<T> {
   }
 
   public abstract String viewEntity(T t);
+
+  @Override
+  protected long initMaxId() {
+    long maxId = 0;
+    RandomAccessFile file = getDataFile();
+    try {
+      file.seek(0);
+      String str = "";
+      while ((str = file.readLine()) != null) {
+        if (!str.contains("id")) {
+          long id = Long.parseLong(str.split(";")[0]);
+          if (maxId < id) maxId = id;
+        }
+      }
+    } catch (IOException e) {
+      LOG.log(Level.INFO, "error during initialization id", e);
+    }
+    return maxId;
+  }
 
   public int[] getStartAndEndOfStr(RandomAccessFile file, T t) throws IOException {
     int[] arr = new int[2];
