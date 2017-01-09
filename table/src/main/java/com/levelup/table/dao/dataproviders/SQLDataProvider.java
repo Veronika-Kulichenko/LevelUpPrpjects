@@ -1,99 +1,146 @@
 package com.levelup.table.dao.dataproviders;
 
 import com.levelup.table.dao.DataProvider;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 
 /**
  * @author Veronika Kulichenko on 07.08.16.
  */
 public class SQLDataProvider implements DataProvider {
 
-    private final String url;
-    private final String user;
-    private final String pass;
-    private final String driver;
+  private final String url;
+  private final String user;
+  private final String pass;
+  private final String driver;
 
-    private volatile Statement statement = null;
-    protected volatile Connection connection;
+  private volatile Statement statement = null;
+  protected volatile Connection connection;
 
-    public SQLDataProvider(String url, String user, String pass, String driver) {
-        this.url = url;
-        this.user = user;
-        this.pass = pass;
-        this.driver = driver;
+  public SQLDataProvider(String url, String user, String pass, String driver) {
+    this.url = url;
+    this.user = user;
+    this.pass = pass;
+    this.driver = driver;
+  }
+
+  @Override
+  public void openConnection() {
+    getConnection();
+    initSchema();
+  }
+
+  private void initSchema() {
+    try {
+      ArrayList<String> tablesMetadata = getTablesMetadata();
+      if (tablesMetadata.isEmpty()) {
+        generateTables();
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+  }
 
-    @Override
-    public void openConnection() {
-        getConnection();
+  private void generateTables() {
+    try (Statement statement = getStatement()){
+      statement.addBatch("CREATE TABLE IF NOT EXISTS CITIZEN (" + "ID INT(11) NOT NULL AUTO_INCREMENT, " + "FIRST_NAME VARCHAR(45) " +
+                         "DEFAULT NULL, " + "LAST_NAME VARCHAR(45) DEFAULT NULL, " + "AGE INT(11) DEFAULT NULL, " + "STREET_ID INT(11) DEFAULT " +
+                         "NULL, " + "PRIMARY KEY (ID), UNIQUE KEY id_UNIQUE (ID) " + ") ENGINE=INNODB AUTO_INCREMENT=1 DEFAULT CHARSET=UTF8MB4;");
+      statement.addBatch("CREATE TABLE IF NOT EXISTS STREET ( " + "ID int(11) NOT NULL AUTO_INCREMENT, " + "STREET_NAME varchar(45) "
+                         + "DEFAULT NULL, " + "PRIMARY KEY (ID) " + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=UTF8MB4;");
+      statement.executeBatch();
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+  }
 
-    @Override
-    public void closeConnection() {
-        try {
-            if (connection != null) {
-                if (statement != null && !statement.isClosed()) {
-                    ResultSet resultSet = statement.getResultSet();
-                    if (resultSet != null) {
-                        resultSet.close();
-                    }
-                    statement.close();
-                }
+  /**
+   * @return Arraylist with the table's name
+   * @throws SQLException
+   */
+  public ArrayList<String> getTablesMetadata() throws SQLException {
+    DatabaseMetaData metaData = connection.getMetaData();
+    String table[] = {"TABLE"};
+    ResultSet rs = null;
+    ArrayList<String> tables = null;
+    // receive the Type of the object in a String array.
+    rs = metaData.getTables(null, null, null, table);
+    tables = new ArrayList<>();
+    while (rs.next()) {
+      tables.add(rs.getString("TABLE_NAME"));
+    }
+    return tables;
+  }
 
-                connection.close();
-                connection = null;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+  @Override
+  public void closeConnection() {
+    try {
+      if (connection != null) {
+        if (statement != null && !statement.isClosed()) {
+          ResultSet resultSet = statement.getResultSet();
+          if (resultSet != null) {
+            resultSet.close();
+          }
+          statement.close();
         }
+        connection.close();
+        connection = null;
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+  }
 
-    private Connection getConnection() {
-        if (connection != null) {
-            return connection;
-        }
-        synchronized (this) {
-            try {
-                Class.forName(driver).newInstance();
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            try {
-                connection = DriverManager.getConnection(url, user, pass);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return connection;
+  private Connection getConnection() {
+    if (connection != null) {
+      return connection;
     }
-
-    public Statement getStatement() {
-        try {
-            statement = getConnection().createStatement();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return statement;
+    synchronized (this) {
+      try {
+        Class.forName(driver).newInstance();
+      } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+      try {
+        connection = DriverManager.getConnection(url, user, pass);
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
     }
+    return connection;
+  }
 
-    public PreparedStatement getPreparedStatement(String query) {
-        try {
-            statement = getConnection().prepareStatement(query);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return (PreparedStatement) statement;
+  public Statement getStatement() {
+    try {
+      statement = getConnection().createStatement();
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+    return statement;
+  }
 
-    public PreparedStatement getPreparedStatement(String query, int autoGeneratedKeys) {
-        try {
-            statement = getConnection().prepareStatement(query, autoGeneratedKeys);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return (PreparedStatement) statement;
+  public PreparedStatement getPreparedStatement(String query) {
+    try {
+      statement = getConnection().prepareStatement(query);
+    } catch (SQLException e) {
+      e.printStackTrace();
     }
+    return (PreparedStatement) statement;
+  }
 
+  public PreparedStatement getPreparedStatement(String query, int autoGeneratedKeys) {
+    try {
+      statement = getConnection().prepareStatement(query, autoGeneratedKeys);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return (PreparedStatement) statement;
+  }
 
 }

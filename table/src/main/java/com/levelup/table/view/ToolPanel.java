@@ -15,6 +15,8 @@ import com.levelup.table.dao.impl.xml.StreetXMLDAOImpl;
 import com.levelup.table.entity.Citizen;
 import com.levelup.table.entity.Street;
 import com.levelup.table.view.impl.CitizenTablePanel;
+import com.levelup.table.view.impl.ConfigureFileConnectionDialog;
+import com.levelup.table.view.impl.ConfigureSQLConnectionDialog;
 import com.levelup.table.view.impl.StreetTablePanel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -94,23 +96,49 @@ public class ToolPanel extends JPanel {
 
   public ActionListener connectListener() {
     return e -> {
-      DataProvider.ConnectionType connectionType1 = getDataProviderConnectionType();
-      initProvider(connectionType1);
-      initTabs(provider, connectionType1);
+      DataProvider.ConnectionType selectedConnectionType = getDataProviderConnectionType();
+      Dialog dialog = initDialog(selectedConnectionType);
+      if(dialog.isOkPressed()) {
+        initProvider(selectedConnectionType, dialog);
+        initTabs(provider, selectedConnectionType);
+      } else {
+        // TODO: 09.01.17 switch toggle button
+      }
     };
+  }
+
+  private Dialog initDialog(final DataProvider.ConnectionType selectedConnectionType) {
+    Dialog dialog = null;
+    switch (selectedConnectionType) {
+      case MYSQL:
+        dialog = new ConfigureSQLConnectionDialog("//localhost:3306/address_book");
+        break;
+      case H2:
+        dialog = new ConfigureSQLConnectionDialog("~/address_book");
+        break;
+      case XML:
+      case CSV:
+      case JSON:
+      default:
+        dialog = new ConfigureFileConnectionDialog();
+    }
+    dialog.setVisible(true);
+    return dialog;
   }
 
   private DataProvider.ConnectionType getDataProviderConnectionType() {
     return DataProvider.ConnectionType.valueOf(((String) getConnectionType().getSelectedItem()).toUpperCase());
   }
 
-  private void initProvider(DataProvider.ConnectionType connectionType) {
+  private void initProvider(DataProvider.ConnectionType connectionType, final Dialog connectionDialog) {
     switch (connectionType) {
       case H2:
-        provider = new SQLDataProvider("jdbc:h2:~/address_book", "root", "root", "org.h2.Driver");
+        ConfigureSQLConnectionDialog h2Dialog = (ConfigureSQLConnectionDialog) connectionDialog;
+        provider = new SQLDataProvider("jdbc:h2:" + h2Dialog.getUrl(), h2Dialog.getUser(), h2Dialog.getUser(), "org.h2.Driver");
         break;
       case MYSQL:
-        provider = new SQLDataProvider("jdbc:mysql://localhost:3306/address_book", "root", "root", "com.mysql.jdbc.Driver");
+        ConfigureSQLConnectionDialog mysqlDialog = (ConfigureSQLConnectionDialog) connectionDialog;
+        provider = new SQLDataProvider("jdbc:mysql:" + mysqlDialog.getUrl(), mysqlDialog.getUser(), mysqlDialog.getPass(), "com.mysql.jdbc.Driver");
         break;
       default:
         provider = new FileDataProvider("/Users/aleksandr/Nika/Programming/MyProjects/table");
@@ -156,8 +184,8 @@ public class ToolPanel extends JPanel {
     provider.openConnection();
     citizenTablePanel = new CitizenTablePanel(citizenDAO);
     streetTablePanel = new StreetTablePanel(streetDAO);
-    workingPanel.addTab("Citizen Tab", citizenTablePanel);
-    workingPanel.addTab("Street Tab", streetTablePanel);
+    workingPanel.addTab(citizenTablePanel.getName(), citizenTablePanel);
+    workingPanel.addTab(streetTablePanel.getName(), streetTablePanel);
   }
 
   public ActionListener disconnectListener() {

@@ -6,8 +6,8 @@ import java.awt.event.ActionListener;
 
 public abstract class Dialog<T> extends JDialog {
 
-    private JButton ok = null;
-    private JButton back = null;
+    protected JButton ok = null;
+    protected JButton back = null;
     protected JPanel panel = null;
     private BtnListener listener = null;
     private boolean isOkPressed = false;
