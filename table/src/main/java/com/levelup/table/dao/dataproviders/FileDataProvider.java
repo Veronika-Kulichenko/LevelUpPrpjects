@@ -30,9 +30,11 @@ public class FileDataProvider implements DataProvider {
   public void openConnection() {
     try {
       for (String fileName : files.toString().split(";")) {
-        dataMap.put(fileName, new RandomAccessFile(new File(packagePath + File.separator + fileName), READ_WRITE_ACCESS));
+        File file = new File(packagePath + File.separator + fileName);
+        if(!file.exists())file.createNewFile();
+        dataMap.put(fileName, new RandomAccessFile(file, READ_WRITE_ACCESS));
       }
-    } catch (FileNotFoundException e) {
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }

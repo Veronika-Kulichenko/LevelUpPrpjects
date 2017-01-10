@@ -141,7 +141,8 @@ public class ToolPanel extends JPanel {
         provider = new SQLDataProvider("jdbc:mysql:" + mysqlDialog.getUrl(), mysqlDialog.getUser(), mysqlDialog.getPass(), "com.mysql.jdbc.Driver");
         break;
       default:
-        provider = new FileDataProvider("/Users/aleksandr/Nika/Programming/MyProjects/table");
+        ConfigureFileConnectionDialog fileConnectionDialog = (ConfigureFileConnectionDialog)connectionDialog;
+        provider = new FileDataProvider(fileConnectionDialog.getSelectedPath());
 
     }
   }

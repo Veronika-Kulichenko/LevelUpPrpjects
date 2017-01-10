@@ -1,0 +1,9 @@
+{"citizenList":[
+{id:1, firstName:Tanya, lastName:Ischenko, age:27, streetId:1},
+{id:2, firstName:Anatoliy, lastName:Dryshlak, age:35, streetId:1},
+{id:3, firstName:Eugeniy, lastName:Mitelskiy, age:65, streetId:2},
+{id:4, firstName:Alexandr, lastName:Fedorenko, age:18, streetId:5},
+{id:5, firstName:Irina, lastName:Grigorenko, age:42, streetId:4},
+{id:6, firstName:Fedor, lastName:Levakov, age:43, streetId:4},
+{id:7, firstName:Nadia, lastName:Dachenko, age:32, streetId:8}
+]}

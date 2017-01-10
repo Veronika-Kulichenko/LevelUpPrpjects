@@ -52,6 +52,14 @@ public class ConfigureFileConnectionDialog extends Dialog {
     }
   }
 
+  public String getSelectedPath() {
+    return selectedPath.getText();
+  }
+
+  public void setSelectedPath(String selectedPath) {
+    this.selectedPath.setText(selectedPath);
+  }
+
   @Override
   public Object get() {
     return null;
