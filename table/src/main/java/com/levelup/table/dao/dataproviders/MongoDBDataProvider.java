@@ -2,33 +2,47 @@ package com.levelup.table.dao.dataproviders;
 
 import com.levelup.table.dao.DataProvider;
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
-import java.sql.Connection;
-import java.sql.Statement;
+import java.util.Arrays;
 
 public class MongoDBDataProvider implements DataProvider {
 
   private MongoClient mongoClient;
   public MongoDatabase db;
 
-  private final String url;
-  private final String user;
-  private final String pass;
-  private final String database;
+  private String user;
+  private String pass;
+  private String database;
+  private String host;
+  private int port;
 
+  private boolean credentialsUsed = false;
 
-  public MongoDBDataProvider(String url, String user, String pass, String database) {
-    this.url = url;
+  public MongoDBDataProvider(final String host, final int port, String database) {
+    this.host = host;
+    this.port = port;
+    this.database = database;
+  }
+
+  public MongoDBDataProvider(final String user, final String pass, final String database, final String host, final int port) {
     this.user = user;
     this.pass = pass;
     this.database = database;
+    this.host = host;
+    this.port = port;
+    credentialsUsed = true;
   }
 
   @Override
   public void openConnection() {
-    mongoClient = new MongoClient("localhost", 27017);
-    db = mongoClient.getDatabase("address-book");
+    if(credentialsUsed) {
+      mongoClient = new MongoClient(new ServerAddress(host, port), Arrays.asList(MongoCredential.createCredential(user, database, pass.toCharArray())));
+    }else {
+      mongoClient = new MongoClient(host, port);
+    }
+    db = mongoClient.getDatabase(database);
   }
 
   @Override

@@ -12,14 +12,14 @@ public class StreetMongoDBDAOImplTest {
 
   @Test
   public void test() {
-//    MongoDBDataProvider provider = new MongoDBDataProvider();
-//    provider.openConnection();
-//
-//    StreetMongoDBDAOImpl streetMongoDBDAO = new StreetMongoDBDAOImpl(provider);
+    MongoDBDataProvider provider = new MongoDBDataProvider("mongodb:localhost", 27017, "address-book");
+    provider.openConnection();
+
+    StreetMongoDBDAOImpl streetMongoDBDAO = new StreetMongoDBDAOImpl(provider);
 //
 //    streetMongoDBDAO.update(new Street(2L,"Gogolia"));
 
-//            streetMongoDBDAO.create(new Street(2L, "Shevchenko"));
+            streetMongoDBDAO.create(new Street("Shevchenko"));
 //    streetMongoDBDAO.delete(new Street(1484084645686L, "Gogolia"));
 
 //    Street street = streetMongoDBDAO.getOneById(1484084967418L);

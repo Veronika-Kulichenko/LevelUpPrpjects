@@ -23,6 +23,9 @@ public class StreetMongoDBDAOImpl extends AbstractMongoDB<Street> {
   @Override
   public BasicDBObject viewEntity(final Street street) {
     BasicDBObject document = new BasicDBObject();
+    if ((street.getId() == null) || (street.getId() == 0L)) {
+    street.setId(getNextId());
+    }
     document.put("id", street.getId());
     document.put("streetName", street.getStreetName());
     return document;
@@ -38,18 +41,8 @@ public class StreetMongoDBDAOImpl extends AbstractMongoDB<Street> {
 
   @Override
   public void update(final Street street) {
-    MongoCollection collection = database.getCollection(collectionName);
+    MongoCollection collection = getDB().getCollection(collectionName);
     collection.updateOne(eq("id", street.getId()), set("streetName", street.getStreetName()));
-    //    BasicDBObject old = new BasicDBObject();
-    //    old.put("id", street.getId());
-    //
-    //    BasicDBObject newDocument = new BasicDBObject();
-    //    newDocument.put("streetName", street.getStreetName());
-    //
-    //    BasicDBObject updated = new BasicDBObject();
-    //    updated.put("$set", newDocument);
-    //
-    //    collection.updateOne(old, updated);
   }
 
 }

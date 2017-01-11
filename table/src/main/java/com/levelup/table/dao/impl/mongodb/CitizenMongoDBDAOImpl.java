@@ -19,7 +19,7 @@ public class CitizenMongoDBDAOImpl extends AbstractMongoDB<Citizen> {
 
   @Override
   public void update(final Citizen citizen) {
-    MongoCollection collection = database.getCollection(collectionName);
+    MongoCollection collection = getDB().getCollection(collectionName);
     BasicDBObject old = new BasicDBObject();
     old.put("id", citizen.getId());
     BasicDBObject newDocument = new BasicDBObject();
@@ -35,6 +35,9 @@ public class CitizenMongoDBDAOImpl extends AbstractMongoDB<Citizen> {
   @Override
   public BasicDBObject viewEntity(final Citizen citizen) {
     BasicDBObject document = new BasicDBObject();
+    if ((citizen.getId() == null) || (citizen.getId() == 0L)) {
+      citizen.setId(getNextId());
+    }
     document.put("id", citizen.getId());
     document.put("firstName", citizen.getFirstName());
     document.put("lastName", citizen.getLastName());

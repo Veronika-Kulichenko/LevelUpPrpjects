@@ -149,7 +149,8 @@ public class ToolPanel extends JPanel {
         break;
       case MONGODB:
         ConfigureMongoDBConnectionDialog mongoDBConnectionDialog = (ConfigureMongoDBConnectionDialog) connectionDialog;
-        provider = new MongoDBDataProvider("mongodb:" + mongoDBConnectionDialog.getUrl(), mongoDBConnectionDialog.getUser(), mongoDBConnectionDialog.getPass(), mongoDBConnectionDialog.getDatabase());
+        provider = new MongoDBDataProvider("mongodb:localhost", 27017, "address-book");
+//        provider = new MongoDBDataProvider("mongodb:" + mongoDBConnectionDialog.getUrl(), mongoDBConnectionDialog.getUser(), mongoDBConnectionDialog.getPass(), mongoDBConnectionDialog.getDatabase());
         break;
       default:
         ConfigureFileConnectionDialog fileConnectionDialog = (ConfigureFileConnectionDialog)connectionDialog;
