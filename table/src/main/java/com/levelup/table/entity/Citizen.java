@@ -10,6 +10,9 @@ public class Citizen extends Entity {
     private int age;
     private Long streetId;
 
+  public Citizen() {
+  }
+
   public Citizen(final Long id) {
     super(id);
   }

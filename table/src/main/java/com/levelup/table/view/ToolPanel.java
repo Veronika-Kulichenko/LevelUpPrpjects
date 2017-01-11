@@ -3,11 +3,14 @@ package com.levelup.table.view;
 import com.levelup.table.dao.DAO;
 import com.levelup.table.dao.DataProvider;
 import com.levelup.table.dao.dataproviders.FileDataProvider;
+import com.levelup.table.dao.dataproviders.MongoDBDataProvider;
 import com.levelup.table.dao.dataproviders.SQLDataProvider;
 import com.levelup.table.dao.impl.csv.CitizenCSVDAOImpl;
 import com.levelup.table.dao.impl.csv.StreetCSVDAOImpl;
 import com.levelup.table.dao.impl.json.CitizenJsonDAOImpl;
 import com.levelup.table.dao.impl.json.StreetJsonDAOImpl;
+import com.levelup.table.dao.impl.mongodb.CitizenMongoDBDAOImpl;
+import com.levelup.table.dao.impl.mongodb.StreetMongoDBDAOImpl;
 import com.levelup.table.dao.impl.sql.CitizenSQLDAOImpl;
 import com.levelup.table.dao.impl.sql.StreetSQLDAOImpl;
 import com.levelup.table.dao.impl.xml.CitizenXMLDAOImpl;
@@ -16,6 +19,7 @@ import com.levelup.table.entity.Citizen;
 import com.levelup.table.entity.Street;
 import com.levelup.table.view.impl.CitizenTablePanel;
 import com.levelup.table.view.impl.ConfigureFileConnectionDialog;
+import com.levelup.table.view.impl.ConfigureMongoDBConnectionDialog;
 import com.levelup.table.view.impl.ConfigureSQLConnectionDialog;
 import com.levelup.table.view.impl.StreetTablePanel;
 import java.awt.*;
@@ -116,6 +120,9 @@ public class ToolPanel extends JPanel {
       case H2:
         dialog = new ConfigureSQLConnectionDialog("~/address_book");
         break;
+      case MONGODB:
+        dialog = new ConfigureMongoDBConnectionDialog("//localhost:27017");
+        break;
       case XML:
       case CSV:
       case JSON:
@@ -139,6 +146,10 @@ public class ToolPanel extends JPanel {
       case MYSQL:
         ConfigureSQLConnectionDialog mysqlDialog = (ConfigureSQLConnectionDialog) connectionDialog;
         provider = new SQLDataProvider("jdbc:mysql:" + mysqlDialog.getUrl(), mysqlDialog.getUser(), mysqlDialog.getPass(), "com.mysql.jdbc.Driver");
+        break;
+      case MONGODB:
+        ConfigureMongoDBConnectionDialog mongoDBConnectionDialog = (ConfigureMongoDBConnectionDialog) connectionDialog;
+        provider = new MongoDBDataProvider("mongodb:" + mongoDBConnectionDialog.getUrl(), mongoDBConnectionDialog.getUser(), mongoDBConnectionDialog.getPass(), mongoDBConnectionDialog.getDatabase());
         break;
       default:
         ConfigureFileConnectionDialog fileConnectionDialog = (ConfigureFileConnectionDialog)connectionDialog;
@@ -174,9 +185,11 @@ public class ToolPanel extends JPanel {
         citizenDAO = new CitizenJsonDAOImpl(jsonDataProvider);
         streetDAO = new StreetJsonDAOImpl(jsonDataProvider);
         break;
-      //            case MONGODB:
-      //
-      //                break;
+      case MONGODB:
+        MongoDBDataProvider mongoDBDataProvider = (MongoDBDataProvider) provider;
+        citizenDAO = new CitizenMongoDBDAOImpl(mongoDBDataProvider);
+        streetDAO = new StreetMongoDBDAOImpl(mongoDBDataProvider);
+        break;
       default:
         FileDataProvider fileDataProvider = (FileDataProvider) provider;
         citizenDAO = new CitizenJsonDAOImpl(fileDataProvider);
